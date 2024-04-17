@@ -6,3 +6,81 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id                  String                @id @default(uuid()) @db.Uuid
+  name                String
+  email               String                @unique
+  password            String
+  Account             Account[]
+  TransactionCategory TransactionCategory[]
+  Transaction         Transaction[]
+
+  @@map("users")
+}
+
+model Bank {
+  id      String    @id @default(uuid()) @db.Uuid
+  name    String
+  logo    String
+  Account Account[]
+
+  @@map("banks")
+}
+
+enum AccountType {
+  CHECKING
+
+  @@map("account_type")
+}
+
+model Account {
+  id      String      @id @default(uuid()) @db.Uuid
+  userId  String      @map("user_id") @db.Uuid
+  bankId  String?     @map("bank_id") @db.Uuid
+  balance Float
+  type    AccountType
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bank        Bank?         @relation(fields: [bankId], references: [id], onDelete: SetNull)
+  Transaction Transaction[]
+
+  @@map("accounts")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+
+  @@map("transaction_type")
+}
+
+model TransactionCategory {
+  id     String          @id @default(uuid()) @db.Uuid
+  userId String          @map("user_id") @db.Uuid
+  name   String
+  icon   String
+  type   TransactionType
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Transaction Transaction[]
+
+  @@map("transaction_categories")
+}
+
+model Transaction {
+  id                    String          @id @default(uuid()) @db.Uuid
+  userId                String          @map("user_id") @db.Uuid
+  accountId             String          @map("account_id") @db.Uuid
+  transactionCategoryId String?         @map("transaction_category_id") @db.Uuid
+  name                  String
+  value                 Float
+  date                  DateTime
+  type                  TransactionType
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account             Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactionCategory TransactionCategory? @relation(fields: [transactionCategoryId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+}
